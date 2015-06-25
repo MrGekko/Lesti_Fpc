@@ -72,20 +72,27 @@ class Lesti_Fpc_Model_Observer
                 $body = str_replace($this->_placeholder, $this->_html, $body);
                 if (Mage::getStoreConfig(self::SHOW_AGE_XML_PATH)) {
                     Mage::app()->getResponse()
-                        ->setHeader('Age', time() - $time);
+                        ->setHeader('GuruAge', time() - $time);
                 }
                 $response = Mage::app()->getResponse();
+                $response->setHeader('GuruCache', 'yes');
+                $response->setHeader('GuruParams', json_encode(Mage::helper('fpc')->getParams()));
                 $response->setBody($body);
                 Mage::dispatchEvent(
                     'fpc_http_response_send_before',
                     array('response' => $response)
                 );
                 $response->sendResponse();
+                
                 exit;
             }
             if (Mage::getStoreConfig(self::SHOW_AGE_XML_PATH)) {
-                Mage::app()->getResponse()->setHeader('Age', 0);
+                Mage::app()->getResponse()->setHeader('GuruAge', 0);
             }
+            Mage::app()->getResponse()
+                        ->setHeader('GuruCache', 'no');
+            Mage::app()->getResponse()
+                        ->setHeader('GuruParams', json_encode(Mage::helper('fpc')->getParams()));
         }
     }
 

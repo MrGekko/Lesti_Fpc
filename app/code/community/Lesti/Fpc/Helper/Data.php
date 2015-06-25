@@ -66,6 +66,41 @@ class Lesti_Fpc_Helper_Data extends Lesti_Fpc_Helper_Abstract
     {
         return sha1($this->_getParams()) . $postfix;
     }
+    public function getParams()
+    {
+        $request = Mage::app()->getRequest();
+        $params = array('host' => $request->getServer('HTTP_HOST'),
+            'port' => $request->getServer('SERVER_PORT'),
+            'full_action_name' => $this->getFullActionName());
+        $uriParams = $this->_getUriParams();
+        foreach ($request->getParams() as $requestParam =>
+                 $requestParamValue) {
+            if (!$requestParamValue) {
+                continue;
+            }
+            foreach ($uriParams as $uriParam) {
+                if ($this->_matchUriParam($uriParam, $requestParam)) {
+                    $params['uri_' . $requestParam] = $requestParamValue;
+                    break;
+                }
+            }
+        }
+        if (Mage::getStoreConfig(self::XML_PATH_CUSTOMER_GROUPS)) {
+            $customerSession = Mage::getSingleton('customer/session');
+            $params['customer_group_id'] = $customerSession
+                ->getCustomerGroupId();
+        }
+
+        // edit parameters via event
+        $parameters = new Varien_Object();
+        $parameters->setValue($params);
+        Mage::dispatchEvent(
+            'fpc_helper_collect_params',
+            array('parameters' => $parameters)
+        );
+        $params = $parameters->getValue();
+        return $params;
+    }
 
     /**
      * @return mixed
